@@ -1,0 +1,69 @@
+<style>
+    .module-grid { display: flex; gap: 20px; margin-top: 20px; }
+    .data-module { 
+        flex: 1; 
+        background: #f8f9fa; 
+        border: 1px solid #dcdde1; 
+        border-radius: 6px; 
+        padding: 15px; 
+        text-align: left;
+    }
+    .module-header { 
+        font-size: 11px; 
+        font-weight: bold; 
+        color: #34495e; 
+        border-bottom: 1px solid #3498db; 
+        margin-bottom: 10px; 
+        padding-bottom: 5px;
+        text-transform: uppercase;
+    }
+    .nasa-item { font-size: 11px; color: #2c3e50; margin-bottom: 8px; border-left: 2px solid #3498db; padding-left: 5px; }
+    .log-btn { background: #27ae60; color: white; border: none; padding: 8px 12px; border-radius: 4px; font-size: 11px; cursor: pointer; width: 100%; margin-top: 10px; }
+</style>
+
+<div class="module-grid">
+    
+    <div class="data-module">
+        <div class="module-header">📡 Satellite Uplink (NASA)</div>
+        <div id="nasa-feed">Initializing connection...</div>
+        <button class="log-btn" style="background: #2980b9;" onclick="refreshNasa()">REFRESH FEED</button>
+    </div>
+
+    <div class="data-module">
+        <div class="module-header">📝 Project Logbook</div>
+        <textarea id="logInput" placeholder="Log research updates..." style="width:92%; height:60px; font-size:11px;"></textarea>
+        <button class="log-btn" onclick="saveLog()">COMMIT UPDATES</button>
+        <p id="saveStatus" style="font-size:9px; margin-top:5px; color: #7f8c8d;"></p>
+    </div>
+
+</div>
+
+<script>
+// NASA Feed Logic
+function refreshNasa() {
+    const feed = document.getElementById('nasa-feed');
+    feed.innerHTML = "Syncing...";
+    fetch('https://api.rss2json.com/v1/api.json?rss_url=https://www.nasa.gov/rss/dyn/breaking_news.rss')
+    .then(res => res.json())
+    .then(data => {
+        feed.innerHTML = "";
+        for(let i=0; i<2; i++) {
+            feed.innerHTML += `<div class="nasa-item">${data.items[i].title}</div>`;
+        }
+    });
+}
+
+// Logbook Logic
+function saveLog() {
+    const text = document.getElementById('logInput').value;
+    localStorage.setItem('researchLog', text);
+    document.getElementById('saveStatus').innerText = "NODE_SYNCED: " + new Date().toLocaleTimeString();
+}
+
+// Auto-Load on start
+window.onload = function() {
+    refreshNasa();
+    const saved = localStorage.getItem('researchLog');
+    if (saved) document.getElementById('logInput').value = saved;
+};
+</script>
