@@ -1,69 +1,51 @@
-<style>
-    .module-grid { display: flex; gap: 20px; margin-top: 20px; }
-    .data-module { 
-        flex: 1; 
-        background: #f8f9fa; 
-        border: 1px solid #dcdde1; 
-        border-radius: 6px; 
-        padding: 15px; 
-        text-align: left;
-    }
-    .module-header { 
-        font-size: 11px; 
-        font-weight: bold; 
-        color: #34495e; 
-        border-bottom: 1px solid #3498db; 
-        margin-bottom: 10px; 
-        padding-bottom: 5px;
-        text-transform: uppercase;
-    }
-    .nasa-item { font-size: 11px; color: #2c3e50; margin-bottom: 8px; border-left: 2px solid #3498db; padding-left: 5px; }
-    .log-btn { background: #27ae60; color: white; border: none; padding: 8px 12px; border-radius: 4px; font-size: 11px; cursor: pointer; width: 100%; margin-top: 10px; }
-</style>
-
-<div class="module-grid">
+<div class="module">
+    <h4>📑 Persistent Research Log</h4>
+    <p style="font-size: 10px; color: #7f8c8d;">Data is cached locally. Use 'Generate Archive Link' to save notes across URLs.</p>
     
-    <div class="data-module">
-        <div class="module-header">📡 Satellite Uplink (NASA)</div>
-        <div id="nasa-feed">Initializing connection...</div>
-        <button class="log-btn" style="background: #2980b9;" onclick="refreshNasa()">REFRESH FEED</button>
+    <textarea id="researchNotes" class="admin-input" placeholder="Enter findings..."></textarea>
+    
+    <div style="display: flex; gap: 5px;">
+        <button class="action-btn btn-update" onclick="saveToMemory()">SAVE TO NODE</button>
+        <button class="action-btn" style="background:#546e7a; color:white;" onclick="generateShareLink()">GENERATE ARCHIVE LINK</button>
     </div>
-
-    <div class="data-module">
-        <div class="module-header">📝 Project Logbook</div>
-        <textarea id="logInput" placeholder="Log research updates..." style="width:92%; height:60px; font-size:11px;"></textarea>
-        <button class="log-btn" onclick="saveLog()">COMMIT UPDATES</button>
-        <p id="saveStatus" style="font-size:9px; margin-top:5px; color: #7f8c8d;"></p>
-    </div>
-
+    
+    <p id="logStatus" style="font-size:9px; color:#27ae60; margin-top:5px;"></p>
 </div>
 
 <script>
-// NASA Feed Logic
-function refreshNasa() {
-    const feed = document.getElementById('nasa-feed');
-    feed.innerHTML = "Syncing...";
-    fetch('https://api.rss2json.com/v1/api.json?rss_url=https://www.nasa.gov/rss/dyn/breaking_news.rss')
-    .then(res => res.json())
-    .then(data => {
-        feed.innerHTML = "";
-        for(let i=0; i<2; i++) {
-            feed.innerHTML += `<div class="nasa-item">${data.items[i].title}</div>`;
-        }
-    });
+// 1. SAVE TO THE COMPUTER (LocalStorage)
+function saveToMemory() {
+    const text = document.getElementById('researchNotes').value;
+    localStorage.setItem('lab_notes', text);
+    document.getElementById('logStatus').innerText = "✓ Saved to Local Memory";
 }
 
-// Logbook Logic
-function saveLog() {
-    const text = document.getElementById('logInput').value;
-    localStorage.setItem('researchLog', text);
-    document.getElementById('saveStatus').innerText = "NODE_SYNCED: " + new Date().toLocaleTimeString();
+// 2. MAKE A LINK THAT HAS THE TEXT INSIDE IT
+function generateShareLink() {
+    const text = document.getElementById('researchNotes').value;
+    const encodedText = btoa(text); // Turns text into a code
+    const newUrl = window.location.origin + window.location.pathname + "?data=" + encodedText;
+    
+    // Copy the new URL to your clipboard
+    navigator.clipboard.writeText(newUrl);
+    alert("Archive Link Copied! Save this URL to see your notes anywhere.");
 }
 
-// Auto-Load on start
+// 3. LOAD DATA WHEN SITE OPENS
 window.onload = function() {
-    refreshNasa();
-    const saved = localStorage.getItem('researchLog');
-    if (saved) document.getElementById('logInput').value = saved;
+    // Check if there is data in the URL first
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlData = urlParams.get('data');
+
+    if (urlData) {
+        document.getElementById('researchNotes').value = atob(urlData); // Decode URL data
+    } else {
+        // Otherwise, check the computer's local memory
+        const localData = localStorage.getItem('lab_notes');
+        if (localData) document.getElementById('researchNotes').value = localData;
+    }
+    
+    // Also run your NASA fetch
+    if(typeof fetchNasa === 'function') fetchNasa();
 };
 </script>
